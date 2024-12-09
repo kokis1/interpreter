@@ -2,7 +2,7 @@
 # EOF is the end of file token, indicating that there is no more input for the lexical analysis
 
 
-INTEGER, PLUS, EOF = "INTEGER", "PLUS", "EOF"
+INTEGER, PLUS, EOF, WHITESPACE = "INTEGER", "PLUS", "EOF", "WHITESPACE"
 
 class Token(object):
     def __init__(self, type, value):
@@ -58,6 +58,12 @@ class Interpreter(object):
             self.pos += 1
             return token
         
+        
+        if current_char == " ":
+            token = Token(WHITESPACE, current_char)
+            self.pos += 1
+            return token
+        
         self.error()
     
     def eat(self, token_type):
@@ -75,7 +81,7 @@ class Interpreter(object):
 
         self.current_token = self.get_next_token()
 
-        # we expect the current token to be a single digit integer
+        '''# we expect the current token to be a single digit integer
         left = self.current_token
         self.eat(INTEGER)
 
@@ -85,8 +91,34 @@ class Interpreter(object):
 
         # we expect the current token to be a single digit integer
         right = self.current_token
-        self.eat(INTEGER)
+        self.eat(INTEGER)'''
 
+        
+
+        # using a simple stack memory to allow integers of many digits to be added together, and allowing multiple additions
+        stack = []
+        while True:
+            if self.current_token.type == INTEGER and stack == []:
+                stack.append(self.current_token)
+                self.eat(INTEGER)
+            
+            elif self.current_token.type == INTEGER and stack != []:
+                integer = stack.pop()
+                next_digit = self.current_token
+                new_number = 10*integer.value + next_digit.value
+                token = Token(INTEGER, new_number)
+                stack.append(token)
+                self.eat(INTEGER)
+            
+            elif self.current_token.type == PLUS and stack != []:
+                stack.append(Token(INTEGER, 0))
+                self.eat(PLUS)
+            
+            elif self.current_token.type == WHITESPACE:
+                self.eat(WHITESPACE)
+            
+            elif self.current_token.type == EOF:
+                break
         # after the above call the self.current_token is set to
         # EOF token
 
@@ -95,8 +127,12 @@ class Interpreter(object):
         # return the result of adding two integers, thus
         # effectively interpreting client input
 
-        result = left.value + right.value
-        return result
+
+        # we are only working with addition, so adding up the stack and returnning the result will be good
+        total = 0
+        for index in range(0, len(stack)):
+            total += stack[index].value
+        return total
     
 def main():
     while True:
