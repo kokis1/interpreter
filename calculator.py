@@ -2,13 +2,13 @@
 # EOF is the end of file token, indicating that there is no more input for the lexical analysis
 
 
-INTEGER, PLUS, EOF, WHITESPACE = "INTEGER", "PLUS", "EOF", "WHITESPACE"
+INTEGER, PLUS, EOF, MINUS, MULTIPLY, DIVIDE = "INTEGER", "PLUS", "EOF", "MINUS", "MULTIPLY", "DIVIDE"
 
 class Token(object):
     def __init__(self, type, value):
-        # token type: integer, plus or eof
+        # token type: integer, plus, eof or minus
         self.type = type
-        # token value = 0, 1,...,9 "+" or "eof"
+        # token value = 0, 1,...,9 "+", "eof" or "-"
         self.value = value
     def __str__(self):
         '''string representation of the class instance
@@ -30,41 +30,61 @@ class Interpreter(object):
         self.pos = 0
         # the current token instance
         self.current_token = None
+        self.current_char = self.text[self.pos]
     def error(self):
         raise Exception("Error parsing input")
     
+    def advance(self):
+        ''''advnace the pos variable and set the current_char variable'''
+        self.pos += 1
+        if self.pos > len(self.text) - 1:
+            self.current_char = None
+        else:
+            self.current_char = self.text[self.pos]
+    def skip_whitespace(self):
+        while self.current_char is not None and self.current_char.isspace():
+            self.advance()
+    
+    def integer(self):
+        '''return a multidigit integer consumed from the inpus'''
+        result = ''
+        while self.current_char is not None and self.current_char.isdigit():
+            result += self.current_char
+            self.advance()
+        return int(result)
+
     def get_next_token(self):
         '''lexical analyser, also known as a scanner or tokenizer
         This method breaks a sentence apart into tokens, one token at a time'''
+        while self.current_char is not None:
+            
+            if self.current_char.isspace():
+                self.skip_whitespace()
+                continue
+            
+            if self.current_char.isdigit():
+                return Token(INTEGER, self.integer())
 
-        text = self.text
-
-
-        # is self.pos index is past the end of the self.text?
-        # if so, then return EOF token because there is no more
-        # input left to convert into tokens
-        if self.pos > len(text) - 1:
-            return Token(EOF, None)
-        # get a character at the position self.pos and decide what token to create based on the character
-        current_char = text[self.pos]
-
-        if current_char.isdigit():
-            token = Token(INTEGER, int(current_char))
-            self.pos += 1
-            return token
-
-        if current_char == "+":
-            token = Token(PLUS, current_char)
-            self.pos += 1
-            return token
+            if self.current_char == "+":
+                self.advance()
+                return Token(PLUS, "+")
+            
+            if self.current_char == "-":
+                self.advance()
+                return  Token(MINUS, "-")
+            
+            if self.current_char == "/":
+                self.advance()
+                return Token(DIVIDE, "/")
+            
+            if self.current_char == "*":
+                self.advance()
+                return Token(MULTIPLY, "*")
+            
+            self.error()
         
-        
-        if current_char == " ":
-            token = Token(WHITESPACE, current_char)
-            self.pos += 1
-            return token
-        
-        self.error()
+        return Token(EOF, None)
+    
     
     def eat(self, token_type):
         '''compare the current token type with the passed token type and if the match then 
@@ -76,68 +96,54 @@ class Interpreter(object):
             self.error()
     
     def expr(self):
-        '''expr -> INTEGER PLUS INTEGER'''
+        '''parser/interpreter
+        
+           expr -> INTEGER PLUS INTEGER
+           expr -> INTEGER MINUS INTEGER'''
         # set the current token to the first token taken from the input
 
         self.current_token = self.get_next_token()
 
-        '''# we expect the current token to be a single digit integer
+        # we expect the current token to be an integer
         left = self.current_token
         self.eat(INTEGER)
 
-        # we expect the current token to be a "+"
-        op = self.current_token
-        self.eat(PLUS)
-
-        # we expect the current token to be a single digit integer
-        right = self.current_token
-        self.eat(INTEGER)'''
-
+        # we expect the current token to be "+" or "-"
+        operator = self.current_token
+        if operator.type == PLUS:
+            self.eat(PLUS)
         
+        elif operator.type == MINUS:
+            self.eat(MINUS)
 
-        # using a simple stack memory to allow integers of many digits to be added together, and allowing multiple additions
-        stack = []
-        while True:
-            if self.current_token.type == INTEGER and stack == []:
-                stack.append(self.current_token)
-                self.eat(INTEGER)
-            
-            elif self.current_token.type == INTEGER and stack != []:
-                integer = stack.pop()
-                next_digit = self.current_token
-                new_number = 10*integer.value + next_digit.value
-                token = Token(INTEGER, new_number)
-                stack.append(token)
-                self.eat(INTEGER)
-            
-            elif self.current_token.type == PLUS and stack != []:
-                stack.append(Token(INTEGER, 0))
-                self.eat(PLUS)
-            
-            elif self.current_token.type == WHITESPACE:
-                self.eat(WHITESPACE)
-            
-            elif self.current_token.type == EOF:
-                break
-        # after the above call the self.current_token is set to
-        # EOF token
+        elif operator.type == MULTIPLY:
+            self.eat(MULTIPLY)
+        
+        elif operator.type == DIVIDE:
+            self.eat(DIVIDE)
+        
+        else:
+            self.error()
 
-        # at this point INTEGER PLUS INTEGER sequence of tokens
-        # has been successfully found and the method can just
-        # return the result of adding two integers, thus
-        # effectively interpreting client input
+        # we expect the current token to be another integer
+        right = self.current_token
+        self.eat(INTEGER)
 
 
-        # we are only working with addition, so adding up the stack and returnning the result will be good
-        total = 0
-        for index in range(0, len(stack)):
-            total += stack[index].value
-        return total
+
+        if operator.type == MINUS:
+            return left.value - right.value
+        elif operator.type == PLUS:
+            return left.value + right.value
+        elif operator.type == MULTIPLY:
+            return left.value * right.value
+        elif operator.type == DIVIDE:
+            return left.value / right.value
     
 def main():
     while True:
         try:
-            text = input('calc>')
+            text = input('calc> ')
         except EOFError:
             break
         if not text:
