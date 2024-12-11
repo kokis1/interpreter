@@ -95,6 +95,12 @@ class Interpreter(object):
         else:
             self.error()
     
+    def term(self):
+        """Return an INTEGER token value"""
+        token = self.current_token
+        self.eat(INTEGER)
+        return token.value
+    
     def expr(self):
         '''parser/interpreter
         
@@ -103,42 +109,24 @@ class Interpreter(object):
         # set the current token to the first token taken from the input
 
         self.current_token = self.get_next_token()
-
-        # we expect the current token to be an integer
-        left = self.current_token
-        self.eat(INTEGER)
-
-        # we expect the current token to be "+" or "-"
-        operator = self.current_token
-        if operator.type == PLUS:
-            self.eat(PLUS)
         
-        elif operator.type == MINUS:
-            self.eat(MINUS)
+        result = self.term()
+        while self.current_token.type in (PLUS, MINUS):
+            token = self.current_token
+            if token.type == PLUS:
+                self.eat(PLUS)
+                result = result + self.term()
+            elif token.type == MINUS:
+                self.eat(MINUS)
+                result = result - self.term()
+            elif token.type == MULTIPLY:
+                self.eat(MULTIPLY)
+                result = result * self.term()
+            elif token.type == DIVIDE:
+                self.eat(DIVIDE)
+                result = result / self.term()
 
-        elif operator.type == MULTIPLY:
-            self.eat(MULTIPLY)
-        
-        elif operator.type == DIVIDE:
-            self.eat(DIVIDE)
-        
-        else:
-            self.error()
-
-        # we expect the current token to be another integer
-        right = self.current_token
-        self.eat(INTEGER)
-
-
-
-        if operator.type == MINUS:
-            return left.value - right.value
-        elif operator.type == PLUS:
-            return left.value + right.value
-        elif operator.type == MULTIPLY:
-            return left.value * right.value
-        elif operator.type == DIVIDE:
-            return left.value / right.value
+        return result
     
 def main():
     while True:
