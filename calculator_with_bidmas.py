@@ -28,8 +28,6 @@ class Lexer(object):
 
         self.pos = 0
 
-        self.current_token = None
-
         self.current_char = self.text[self.pos]
 
     def error(self):
@@ -87,48 +85,50 @@ class Lexer(object):
 class Parser(object):
     def __init__(self, lexer):
         self.lexer = lexer
+
+        self.current_token = self.lexer.tokeniser()
     def error(self):
         raise Exception("Error parsing")
     
 
     def eat(self, token_type):
-        if self.lexer.current_token.type == token_type:
-            self.lexer.current_token = self.lexer.tokeniser()
+        if self.current_token.type == token_type:
+            self.current_token = self.lexer.tokeniser()
         else:
             self.error()
 
     def factor(self):
-        token = self.lexer.current_token
+        token = self.current_token
         self.eat(INTEGER)
         return token.value
     
     def term(self):
         result = self.factor()
 
-        while self.lexer.current_token.type in (MULTIPLY, DIVIDE):
-            token = self.lexer.current_token
+        while self.current_token.type in (MULTIPLY, DIVIDE):
+            token = self.current_token
 
             if token.type == MULTIPLY:
                 self.eat(MULTIPLY)
                 result = result * self.factor()
-            if token.type == DIVIDE:
+            elif token.type == DIVIDE:
                 self.eat(DIVIDE)
                 result = result / self.factor()
         return result
     
     def expr(self):
-        result = self.term()
+       result = self.term()
 
-        while self.lexer.current_token in (PLUS, MINUS):
-            token = self.lexer.current_token
-
+       while self.current_token.type in (PLUS, MINUS):
+            token = self.current_token
             if token.type == PLUS:
                 self.eat(PLUS)
                 result = result + self.term()
-            if token.type == MINUS:
+            elif token.type == MINUS:
                 self.eat(MINUS)
                 result = result - self.term()
-        return result
+
+       return result
     
 
 def main():
