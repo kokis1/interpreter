@@ -10,7 +10,7 @@ Interpreter:
 takes the AST and interprets what it should mean
 
 Token:
-a symbol/small series of symbols that have a specified meanin (like an integer or operator)
+a symbol/small series of symbols that have a specified meaning (like an integer or operator)
 
 AST:
 a data type used to represent the structure of the program
