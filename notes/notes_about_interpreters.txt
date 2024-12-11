@@ -1,0 +1,16 @@
+Components of an interpreter:
+
+Lexer:
+takes the text and breaks it into tokens
+
+Parser:
+takes the stream of tokens and produces an abstract syntax tree (AST) from them
+
+Interpreter:
+takes the AST and interprets what it should mean
+
+Token:
+a symbol/small series of symbols that have a specified meanin (like an integer or operator)
+
+AST:
+a data type used to represent the structure of the program
