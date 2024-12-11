@@ -8,6 +8,8 @@ MINUS = "MINUS"
 MULTIPLY = "MULTIPLY"
 DIVIDE = "DIVIDE"
 EOF = "EOF"
+LEFT_PARENTHESIS = "LEFT_PARENTHESIS"
+RIGHT_PARENTHESIS = "RIGHT_PARENTHESIS"
 
 
 class Token(object):
@@ -79,6 +81,14 @@ class Lexer(object):
                 self.advance()
                 return Token(DIVIDE, "/")
             
+            if self.current_char == "(":
+                self.advance()
+                return Token(LEFT_PARENTHESIS, "(")
+            
+            if self.current_char == ")":
+                self.advance()
+                return Token(RIGHT_PARENTHESIS, ")")
+            
             self.error()
         return Token(EOF, None)
 
@@ -98,9 +108,16 @@ class Parser(object):
             self.error()
 
     def factor(self):
+        """factor : INTEGER | LPAREN expr RPAREN"""
         token = self.current_token
-        self.eat(INTEGER)
-        return token.value
+        if token.type == INTEGER:
+            self.eat(INTEGER)
+            return token.value
+        elif token.type == LEFT_PARENTHESIS:
+            self.eat(LEFT_PARENTHESIS)
+            result = self.expr()
+            self.eat(RIGHT_PARENTHESIS)
+            return result
     
     def term(self):
         result = self.factor()
